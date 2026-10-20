@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en" data-theme="midnight">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy — TinTito</title>
+<meta name="robots" content="index">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="stylesheet" href="/style.css">
+<style>
+  html, body { height: auto; overflow: auto; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    padding: 28px max(18px, env(safe-area-inset-left)) calc(56px + env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-right));
+  }
+  .legal { max-width: 720px; margin: 0 auto; }
+  .legal-top { display: flex; align-items: center; gap: 12px; margin-bottom: 30px; }
+  .legal-top img { width: 54px; height: 54px; image-rendering: pixelated; }
+  .legal-top a { color: var(--muted); font-size: 13px; text-decoration: none; }
+  .legal-top a:hover { color: var(--accent); }
+  .legal h1 { margin: 0 0 6px; font-size: clamp(38px, 9vw, 58px); letter-spacing: -.045em; line-height: .95; font-weight: 600; }
+  .legal .updated { margin: 0 0 28px; color: var(--faint); font-family: var(--font-mono); font-size: 11.5px; }
+  .legal h2 { margin: 28px 0 8px; font-size: 17px; letter-spacing: -.01em; }
+  .legal p, .legal li { color: var(--muted); font-size: 14px; line-height: 1.65; }
+  .legal ul { padding-left: 20px; }
+  .legal a { color: var(--accent); text-underline-offset: 3px; }
+  .legal code { color: var(--fg); font-family: var(--font-mono); font-size: .92em; }
+  .legal .back { display: inline-flex; margin-top: 28px; color: var(--accent); }
+</style>
+</head>
+<body>
+<main class="legal">
+  <div class="legal-top">
+    <img src="/tintito-logo.svg" alt="" class="pixel">
+    <a href="/">TinTito</a>
+  </div>
+
+  <h1>Privacy</h1>
+  <p class="updated">Last updated: 20 October 2026</p>
+
+  <p>TinTito is a self-hosted MUD client. The app has no TinTito account, no analytics, no advertising, and no telemetry.</p>
+
+  <h2>Stored on your device</h2>
+  <p>TinTito keeps a small set of preferences in your browser's <code>localStorage</code>: font, text size, theme, encoding, bell setting, and the last MUD host and port you used. Clearing site data removes them. There are no cookies.</p>
+
+  <h2>When you connect to a MUD</h2>
+  <ul>
+    <li>The host, port, TLS choice, terminal size, and the text you type are sent over a WebSocket to the TinTito bridge you are using.</li>
+    <li>That bridge opens a TCP or TLS connection to the MUD and relays bytes. It may run on your own machine, your LAN, or a server run by the person hosting this copy.</li>
+    <li>The MUD you choose receives your commands, your character name if you enter one, and your IP address under its own privacy policy.</li>
+    <li>The TinTito bridge code does not log MUD traffic. The machine or hosting provider running it may still keep network metadata (such as IP addresses and connection times) under their own policies.</li>
+    <li>No data is sold, and none is shared for advertising.</li>
+  </ul>
+
+  <h2>Third parties</h2>
+  <p>The only third parties involved are the MUD servers you choose to connect to and whoever operates the TinTito bridge. The fonts and app assets are served by the same TinTito deployment; there are no analytics or advertising SDKs.</p>
+
+  <h2>Contact</h2>
+  <p>Questions or deletion requests can go to the maintainer at <a href="https://github.com/Bekkenes" rel="noreferrer">github.com/Bekkenes</a>.</p>
+
+  <a class="back" href="/">← Back to TinTito</a>
+</main>
+</body>
+</html>

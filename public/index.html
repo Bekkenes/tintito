@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en" data-theme="midnight">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TinTito — a pocket MUD client</title>
+<meta name="description" content="TinTito is a phone-friendly MUD client with a proper ANSI terminal, modern monospace fonts, and a Yorkie knight named Tito.">
+<meta name="theme-color" content="#0b1017">
+<meta name="color-scheme" content="dark light">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TinTito">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="preload" href="/fonts/JetBrainsMono-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/SpaceGrotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div id="app">
+  <header id="appbar" class="appbar" hidden>
+    <a class="mini-brand" href="#" id="homeLink" aria-label="TinTito home">
+      <img src="/tintito-logo.svg" alt="" width="38" height="38" class="pixel">
+      <span class="mini-copy">
+        <strong>TinTito</strong>
+        <span id="connLabel">not connected</span>
+      </span>
+    </a>
+    <div class="appbar-actions">
+      <span id="statusPill" class="status-pill" data-state="idle"><i></i><span id="statusText">Idle</span></span>
+      <button class="icon-btn" id="btnSettings" type="button" aria-label="Terminal settings" title="Terminal settings">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.64 8.9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.54h.08a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1Z"/></svg>
+      </button>
+      <button class="icon-btn" id="btnLeave" type="button" aria-label="Disconnect" title="Disconnect">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main id="main">
+    <section id="welcome" class="welcome" aria-labelledby="brandTitle">
+      <div class="hero">
+        <div class="mascot-wrap">
+          <img src="/tintito-logo.svg" alt="Tito, a Yorkie knight holding a sword" class="mascot pixel" width="168" height="168">
+        </div>
+        <div class="hero-copy">
+          <p class="eyebrow">A pocket MUD client</p>
+          <h1 id="brandTitle">TinTito</h1>
+          <p class="tagline">Tiny knight. Big text worlds.</p>
+          <p class="lede">A proper ANSI terminal for MUDs, built for thumbs. Box-drawing art stays aligned, 256 colours glow, and Tito holds the sword.</p>
+        </div>
+      </div>
+
+      <div class="connect-card">
+        <form id="connectForm" class="connect-form" autocomplete="off">
+          <div class="field-row">
+            <label class="field grow">
+              <span>Host</span>
+              <input id="hostInput" name="host" type="text" inputmode="url" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="aardwolf.org" required>
+            </label>
+            <label class="field port">
+              <span>Port</span>
+              <input id="portInput" name="port" type="number" inputmode="numeric" min="1" max="65535" value="4000" required>
+            </label>
+          </div>
+          <div class="connect-row">
+            <label class="tls-toggle">
+              <input id="tlsInput" type="checkbox">
+              <span class="track" aria-hidden="true"><span class="thumb"></span></span>
+              <span class="tls-label">TLS</span>
+            </label>
+            <button class="btn primary connect-btn" type="submit" id="connectBtn">
+              <span>Connect</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+            </button>
+          </div>
+          <p id="formError" class="form-error" role="alert" hidden></p>
+        </form>
+
+        <div class="presets">
+          <p class="presets-label">Or visit a classic</p>
+          <div class="preset-grid">
+            <button type="button" class="preset" data-host="aardwolf.org" data-port="4000" data-tls="0">
+              <span class="preset-name">Aardwolf</span><span class="preset-meta">aardwolf.org:4000</span>
+            </button>
+            <button type="button" class="preset" data-host="alteraeon.com" data-port="3000" data-tls="0">
+              <span class="preset-name">Alter Aeon</span><span class="preset-meta">alteraeon.com:3000</span>
+            </button>
+            <button type="button" class="preset" data-host="discworld.starturtle.net" data-port="4242" data-tls="0">
+              <span class="preset-name">Discworld</span><span class="preset-meta">discworld.starturtle.net:4242</span>
+            </button>
+            <button type="button" class="preset preset-custom" id="customPreset">
+              <span class="preset-name">Somewhere else</span><span class="preset-meta">any telnet MUD</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="quick-settings">
+          <label class="inline-select">
+            <span>Font</span>
+            <select id="fontQuick" aria-label="Terminal font">
+              <option value="jetbrains">JetBrains Mono</option>
+              <option value="plex">IBM Plex Mono</option>
+              <option value="system">System mono</option>
+            </select>
+          </label>
+          <label class="inline-select">
+            <span>Size</span>
+            <select id="sizeQuick" aria-label="Terminal font size">
+              <option>12</option><option>13</option><option selected>14</option><option>15</option><option>16</option><option>18</option><option>20</option>
+            </select>
+          </label>
+          <button type="button" class="text-btn" id="openSettings">More settings</button>
+        </div>
+      </div>
+
+      <p class="fineprint">Self-hosted and account-free. TinTito connects to MUDs through the small bridge on this server; no MUD traffic is logged. <button type="button" class="text-btn install-btn" id="installBtn" hidden>Install app</button> <a class="text-btn" href="/privacy.html">Privacy</a></p>
+    </section>
+
+    <section id="play" class="play" hidden aria-label="Terminal">
+      <div id="banner" class="banner" hidden>
+        <span id="bannerText"></span>
+        <button type="button" class="btn small" id="btnReconnect">Reconnect</button>
+      </div>
+      <div id="viewport" class="term-viewport" role="log" aria-live="polite" aria-relevant="additions text">
+        <div id="scrollback" class="scrollback"></div>
+        <div id="screen" class="screen">
+          <div id="cursor" class="cursor" aria-hidden="true"></div>
+        </div>
+      </div>
+      <button type="button" id="jump" class="jump" hidden>New output <span aria-hidden="true">↓</span></button>
+      <form id="composer" class="composer" aria-label="Send a command">
+        <span class="prompt-mark" aria-hidden="true">&gt;</span>
+        <input id="cmd" type="text" inputmode="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="send" placeholder="Type a command…" aria-label="Command">
+        <button type="submit" class="send-btn" id="sendBtn" aria-label="Send command">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>
+        </button>
+      </form>
+    </section>
+  </main>
+</div>
+
+<dialog id="settings" class="settings-dialog">
+  <div class="sheet">
+    <div class="sheet-head">
+      <div>
+        <p class="eyebrow">Terminal</p>
+        <h2>Settings</h2>
+      </div>
+      <button type="button" class="icon-btn" id="closeSettings" aria-label="Close settings">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+
+    <label class="setting">
+      <span class="setting-label">Font face</span>
+      <select id="fontSelect">
+        <option value="jetbrains">JetBrains Mono</option>
+        <option value="plex">IBM Plex Mono</option>
+        <option value="system">System mono</option>
+      </select>
+      <span id="fontPreview" class="font-preview" aria-hidden="true">┌─┐ ░▒▓ │└─┘</span>
+    </label>
+
+    <label class="setting">
+      <span class="setting-label">Text size <output id="sizeOutput">14px</output></span>
+      <input id="sizeRange" type="range" min="11" max="22" step="1" value="14">
+    </label>
+
+    <label class="setting">
+      <span class="setting-label">Theme</span>
+      <select id="themeSelect">
+        <option value="midnight">Midnight kennel</option>
+        <option value="parchment">Parchment</option>
+      </select>
+    </label>
+
+    <label class="setting">
+      <span class="setting-label">Text encoding</span>
+      <select id="encodingSelect">
+        <option value="utf-8">UTF-8 (recommended)</option>
+        <option value="cp437">CP437 (old ANSI art)</option>
+        <option value="windows-1252">Windows-1252</option>
+      </select>
+    </label>
+
+    <label class="setting switch-setting">
+      <span class="setting-label">Bell sound</span>
+      <input id="bellToggle" type="checkbox" checked>
+      <span class="switch" aria-hidden="true"></span>
+    </label>
+
+    <p class="sheet-note">Font changes re-flow the terminal and tell the MUD the new width. Encoding changes apply to new output.</p>
+    <div class="sheet-actions">
+      <button type="button" class="text-btn" id="resetSettings">Reset defaults</button>
+      <button type="button" class="btn primary" id="doneSettings">Done</button>
+    </div>
+  </div>
+</dialog>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script type="module" src="/app.js"></script>
+</body>
+</html>

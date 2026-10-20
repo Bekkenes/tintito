@@ -1,0 +1,22 @@
+{
+  "name": "tintito",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A pocket-sized MUD client with a proper ANSI terminal and a Yorkie knight.",
+  "type": "module",
+  "scripts": {
+    "start": "bun server/server.js",
+    "dev": "ALLOW_PRIVATE=1 bun server/server.js",
+    "demo": "bun tools/demo-mud.js",
+    "test": "bun test",
+    "check": "bun check",
+    "icons": "python3 tools/logo.py",
+    "ui-smoke": "bun tools/ui-smoke.js"
+  },
+  "engines": {
+    "bun": ">=1.2"
+  },
+  "devDependencies": {
+    "playwright": "^1.64.1"
+  }
+}
