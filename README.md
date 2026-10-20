@@ -134,9 +134,10 @@ the Android launcher that runs Arch Linux and OWL apps. It is a direct
 telnet/TLS terminal client with the same presets and mascot, shipped as an OWL
 app in the Omalauncher store; it does **not** replace the browser PWA above.
 
-See `oma/README.md`, and the store submission under
+See `oma/README.md`. The store submission lives under
 `apps/bekkenes/tintito/` in
-[SimonSchubert/omarchy-widgets](https://github.com/SimonSchubert/omarchy-widgets).
+[SimonSchubert/omarchy-widgets](https://github.com/SimonSchubert/omarchy-widgets)
+as [PR #263](https://github.com/SimonSchubert/omarchy-widgets/pull/263).
 
 ## Store packaging
 

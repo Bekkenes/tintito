@@ -25,4 +25,5 @@ Controls: tap the terminal to type, `Ctrl-]` disconnects, and the title-bar
 back chevron returns to the setup screen. Packages: `python`.
 
 The store copy lives under `apps/bekkenes/tintito/` in
-[SimonSchubert/omarchy-widgets](https://github.com/SimonSchubert/omarchy-widgets).
+[SimonSchubert/omarchy-widgets](https://github.com/SimonSchubert/omarchy-widgets);
+the submission is [PR #263](https://github.com/SimonSchubert/omarchy-widgets/pull/263).
