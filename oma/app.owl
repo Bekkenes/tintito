@@ -1,0 +1,370 @@
+app "tintito" {
+  meta {
+    owl: 8
+    description: "A direct MUD client for the launcher's terminal: presets for Aardwolf, Alter Aeon and Discworld, or your own host, with telnet NAWS, UTF-8 and TLS. No TinTito server or account."
+    version: "1.0"
+    license: "MIT"
+    category: "games"
+  }
+  requires { pacman: ["python"] }
+
+  asset logo = base64"iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAAE4UlEQVR42u3dL4tUYRTA4f0OBkGLQTDuB3CbzWIQwaBgtAhmLdMFg8ImwbDfwLDFZhE/gMKytgkatpiMmu8Jczi87/038/zgJJ3Zmd3zhMudO/foSJIkSZIkSZIkSZIkSZIkSZIkSaVu3bj9b9f4DQkACQAJAGm/Fvz7/ZOds3YQQAMAAAAAAAAAAAAAsG9/oNYFj/Ph+M5gxl6g3s8fn+9yezUYIAAAAAAAAAAAAAAAmHvhv715NJjsD9S64HODaH3/2fOdnp0PJgJ48vzVYIAAAAAAAAAAAAAAAGBqAO+fnQwmW4i4kHFaFzyb6ofnsoWP778VQFz4OBEIAAAAAAAAAAAAAAAATL3wVQDZQV91sgWpTvZ6MwBVEBmAGAAAAAAAAAAAAAAAAEx9oiv+gS82m8FUQWQHfdXpDWDs9w8AAAAAAAAAAAAAAABLX3gAau+/9fcBAAAAAAAAAAAAAAAASwcQHx+n94ms3gDiZO8HAAAAAAAAAAAAAAAADh1EFcDSPgxXBdD7w4EAAAAAAAAAAAAAAACwdADZgmQA4hc9VSf74qjqVAFUfz8AAAAAAAAAAAAAAACwdhCtANZ+EJyNi+IBAAAAAAAAAAAAADg0ENkFLL8/Px5M9QKYqR/fuvAAAAAAAAAAAAAAAACwbyDiZCeeWg8ye0/2eqs32AAAAAAAAAAAAAAAAIB9B5CdmKp+mOzXp9ejTvbhtezDewAAAAAAAAAAAAAAAABAG4A4sevXbg5m7McDIAAAEAAACAAAtPsPGD9c1gogLmx1gVsfH19/fH8AAAAAAAAAAAAAAADgILjvQfDc4yBYAAAgAAAQAABoWgB/tl8HEw9i40LGf4+PB0AAACAAABAAAKgvgNaL4OPCZgCyyZ6v90XyAAAAAAAAAAAAAAAAcOggql+mmy1sBqL6+OqX3fZeOAAAAAAAAAAAAAAAADh0IK0LXwXRuuBLPwgGBAAAAAAAAAAAAACApQGoHrTGudhsdk71+aoL9ffnu8FkoLLJbtJXvWFH9vpsJAAACAAABAAAWhuA3lO96V/8oqylT3z9NhIAAAQAAAIAAM0N4MeXj4NpXejq81UPWuNB5tLHQTAAAAAAAAAAAAAAAHMD6L3wVRDVE1HZZDf6zi7AOb77oDRVsDYQAAAEAAACAADNDWBpJ4riBSfZTfKy/x8BRCBx4omquPC9v5hLAAAgAAAQAACodaF7n0jqveDZz8u+DLc61YPg+P+rB8E2EgAABAAAAgAAjb3wT1++Hcy9hy9Gnfjzsqk+f7ZwrTfedhAMAAAAAAAAAAAAAAAAbQDiQezcAOJCVwHEcRAMAAAAAAAAAAAAAAAA0x4Et57oq071xB4AAAAAAAAAAAAAAAAAMC6AqX+/Fh4AAAAAAAAAAAAAgLkXvnqBR5y1nQibe+EsPAAAAAAAAAAAAAAAawcw9kXtvS+qt4AAAAAAAAAAAAAAAAAwBBBvOBEnAnBTOQEAgAAAQAAAoHUBqF7UHaf3h+myC0zWfiJMAAAgAAAQAABoaSBaBwABAIAAAEAAAKDDAgSAAABAAAAgAADQfi/86dl518kATP3z/MUFgASABIAOfeEvt1c7J974uTrZQrY+f5zs/QABAAAAAAAAAAAAAIAkSZIkSZIkSZIkSZIkSZIkSVpc/wE2yUhA5HctyAAAAABJRU5ErkJggg=="
+  icon: logo
+
+  state host = "aardwolf.org" persist
+  state port = "4000" persist
+  state tls = false persist
+  state textSize = 11 persist
+  state running = false
+
+  let PRESETS = [
+    ["Aardwolf", "aardwolf.org", "4000", false],
+    ["Alter Aeon", "alteraeon.com", "3000", false],
+    ["Discworld", "discworld.starturtle.net", "4242", false]
+  ]
+
+  let command = """set -e
+d="$HOME/.cache/omalauncher/tintito"
+mkdir -p "$d"
+cat > "$d/tintito-tui.py" <<'TINTITO_OMA_PY'
+#!/usr/bin/env python3
+# TinTito terminal client for Omalauncher. Direct telnet or TLS; no bridge.
+import os, sys, socket, ssl, select, signal, termios, tty
+
+IAC = 255
+DONT = 254
+DO = 253
+WONT = 252
+WILL = 251
+SB = 250
+SE = 240
+ECHO = 1
+SGA = 3
+TTYPE = 24
+NAWS = 31
+CHARSET = 42
+TTYPE_IS = 0
+TTYPE_SEND = 1
+CHARSET_REQUEST = 1
+CHARSET_ACCEPTED = 2
+CHARSET_REJECTED = 3
+
+CR = 13
+LF = 10
+CTRL_RIGHT_BRACKET = 29
+CRLF = bytes([13, 10])
+ESC = chr(27)
+BEL = chr(7)
+
+
+def terminal_size():
+    try:
+        size = os.get_terminal_size(1)
+        return max(2, size.columns), max(2, size.lines)
+    except OSError:
+        return 80, 24
+
+
+class Telnet:
+    def __init__(self, sock):
+        self.sock = sock
+        self.state = 0
+        self.cmd = 0
+        self.sb = []
+        self.local = {}
+        self.remote = {}
+        self.naws = False
+        self.name = "XTERM-256COLOR"
+
+    def send(self, data):
+        try:
+            self.sock.sendall(data)
+        except OSError:
+            pass
+
+    def reply(self, cmd, opt):
+        self.send(bytes([IAC, cmd, opt]))
+
+    def sub(self, opt, payload):
+        self.send(bytes([IAC, SB, opt]) + bytes(payload) + bytes([IAC, SE]))
+
+    def send_naws(self):
+        w, h = terminal_size()
+        self.send(bytes([IAC, SB, NAWS, (w >> 8) & 255, w & 255,
+                         (h >> 8) & 255, h & 255, IAC, SE]))
+
+    def negotiate(self, cmd, opt):
+        if cmd == DO:
+            if self.local.get(opt):
+                return
+            if opt in (NAWS, TTYPE, SGA, CHARSET):
+                self.local[opt] = True
+                self.reply(WILL, opt)
+                if opt == NAWS:
+                    self.naws = True
+                    self.send_naws()
+            else:
+                self.reply(WONT, opt)
+        elif cmd == WILL:
+            if self.remote.get(opt):
+                return
+            if opt in (ECHO, SGA, CHARSET):
+                self.remote[opt] = True
+                self.reply(DO, opt)
+                if opt == CHARSET:
+                    self.sub(CHARSET, [CHARSET_REQUEST] + list(b"UTF-8"))
+            else:
+                self.reply(DONT, opt)
+        elif cmd == WONT:
+            self.remote[opt] = False
+        elif cmd == DONT:
+            self.local[opt] = False
+            if opt == NAWS:
+                self.naws = False
+
+    def subneg(self, payload):
+        if len(payload) < 2:
+            return
+        opt = payload[0]
+        body = payload[1:]
+        if opt == TTYPE and body and body[0] == TTYPE_SEND:
+            self.sub(TTYPE, [TTYPE_IS] + list(self.name.encode("ascii", "ignore")))
+        elif opt == CHARSET and body and body[0] == CHARSET_REQUEST:
+            text = bytes(body[1:]).decode("ascii", "ignore")
+            offered = [x for x in text.replace(chr(0), ";").split(";") if x]
+            ok = any(x.upper().replace("-", "").replace("_", "") == "UTF8" for x in offered)
+            if ok:
+                self.sub(CHARSET, [CHARSET_ACCEPTED] + list(b"UTF-8"))
+            else:
+                self.sub(CHARSET, [CHARSET_REJECTED] + list(b"UTF-8"))
+
+    def feed(self, data):
+        out = bytearray()
+        for b in data:
+            if self.state == 0:
+                if b == IAC:
+                    self.state = 1
+                else:
+                    out.append(b)
+            elif self.state == 1:
+                if b == IAC:
+                    out.append(255)
+                    self.state = 0
+                elif b in (DO, DONT, WILL, WONT):
+                    self.cmd = b
+                    self.state = 2
+                elif b == SB:
+                    self.sb = []
+                    self.state = 3
+                else:
+                    self.state = 0
+            elif self.state == 2:
+                self.negotiate(self.cmd, b)
+                self.state = 0
+            elif self.state == 3:
+                if b == IAC:
+                    self.state = 4
+                else:
+                    self.sb.append(b)
+            elif self.state == 4:
+                if b == SE:
+                    self.subneg(self.sb)
+                    self.sb = []
+                    self.state = 0
+                elif b == IAC:
+                    self.sb.append(255)
+                    self.state = 3
+                else:
+                    self.state = 3
+        return bytes(out)
+
+
+def run(host, port, tls):
+    try:
+        sock = socket.create_connection((host, port), timeout=20)
+        if tls:
+            context = ssl.create_default_context()
+            sock = context.wrap_socket(sock, server_hostname=host)
+        sock.setblocking(True)
+    except Exception as exc:
+        sys.stdout.write("TinTito: " + str(exc) + chr(10))
+        sys.stdout.flush()
+        return 1
+
+    fd = sys.stdin.fileno()
+    old = None
+    try:
+        old = termios.tcgetattr(fd)
+        tty.setraw(fd)
+        telnet = Telnet(sock)
+        resized = [False]
+
+        def on_winch(signum, frame):
+            resized[0] = True
+
+        signal.signal(signal.SIGWINCH, on_winch)
+        sys.stdout.buffer.write((ESC + "]0;TinTito" + BEL).encode())
+        sys.stdout.buffer.flush()
+        skip_lf = False
+        while True:
+            if resized[0]:
+                resized[0] = False
+                if telnet.naws:
+                    telnet.send_naws()
+            try:
+                ready, _, _ = select.select([sock, fd], [], [], 1.0)
+            except InterruptedError:
+                continue
+            if fd in ready:
+                try:
+                    data = os.read(fd, 4096)
+                except OSError:
+                    data = b""
+                if not data:
+                    break
+                if CTRL_RIGHT_BRACKET in data:
+                    break
+                outgoing = bytearray()
+                for b in data:
+                    if b == CR:
+                        outgoing.extend(CRLF)
+                        skip_lf = True
+                    elif b == LF:
+                        if skip_lf:
+                            skip_lf = False
+                        else:
+                            outgoing.append(LF)
+                    else:
+                        skip_lf = False
+                        outgoing.append(b)
+                if outgoing:
+                    try:
+                        sock.sendall(bytes(outgoing))
+                    except OSError:
+                        break
+            if sock in ready:
+                try:
+                    data = sock.recv(65536)
+                except OSError:
+                    data = b""
+                if not data:
+                    break
+                clean = telnet.feed(data)
+                if clean:
+                    sys.stdout.buffer.write(clean)
+                    sys.stdout.buffer.flush()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        if old is not None:
+            try:
+                termios.tcsetattr(fd, termios.TCSADRAIN, old)
+            except Exception:
+                pass
+        try:
+            sock.close()
+        except Exception:
+            pass
+    sys.stdout.write(chr(13) + chr(10) + "[TinTito] disconnected" + chr(13) + chr(10))
+    sys.stdout.flush()
+    return 0
+
+
+def main():
+    if len(sys.argv) < 3:
+        print("usage: tintito-tui.py host port [tls]")
+        return 2
+    host = sys.argv[1]
+    try:
+        port = int(sys.argv[2])
+    except ValueError:
+        print("TinTito: invalid port")
+        return 2
+    tls = len(sys.argv) > 3 and sys.argv[3] == "1"
+    return run(host, port, tls)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+TINTITO_OMA_PY
+exec python3 "$d/tintito-tui.py" ${sh(host)} ${sh(port)} ${tls ? 1 : 0}"""
+
+  title: running ? "TinTito - ${host}" : "TinTito"
+  back: running
+  onBack: running = false
+  edge: true
+
+  Box {
+    fill: true
+    align: topStart
+    if running {
+      Terminal { command: command; fontSize: textSize; padding: 0; fill: true }
+    } else {
+      Column {
+        fill: true
+        scroll: true
+        padding: [16, 0]
+        gap: 12
+        Row {
+          gap: 12
+          align: center
+          padding: [2, 0]
+          Image { src: logo; size: 84 }
+          Column {
+            gap: 2
+            Text { text: "TinTito"; style: title; bold: true }
+            Text { text: "a pocket MUD client"; style: small; color: muted }
+          }
+        }
+        Text {
+          text: "Direct telnet or TLS from the launcher terminal. Presets below, or use your own host. No TinTito server, account, or bridge."
+          style: small
+          color: muted
+          maxLines: 4
+        }
+        Text { text: "host and port"; style: label; color: muted }
+        Row {
+          gap: 8
+          Input { weight: 1; text: host; placeholder: "aardwolf.org"; onChange: host = value; fontSize: 15 }
+          Input { width: 84; text: port; placeholder: "4000"; onChange: port = value; fontSize: 15 }
+        }
+        Row {
+          gap: 10
+          align: center
+          Button { text: tls ? "TLS on" : "TLS off"; color: tls ? accent : muted; onTap: tls = !tls }
+          Text { text: "${textSize} pt"; style: small; color: muted; width: 42 }
+          Slider { weight: 1; value: textSize; min: 9; max: 18; step: 1; onChange: textSize = value }
+        }
+        Text { text: "presets"; style: label; color: muted }
+        Flow {
+          gap: 6
+          for p in PRESETS {
+            Button {
+              text: p[0]
+              onTap: { host = p[1]; port = p[2]; tls = p[3]; haptic() }
+            }
+          }
+        }
+        Button {
+          text: "Connect"
+          background: accent
+          color: background
+          onTap: { running = true; haptic() }
+        }
+        Text {
+          text: "Tap the terminal to type. Ctrl-] disconnects. Back returns here. TLS works with a valid certificate."
+          style: small
+          color: muted
+          maxLines: 3
+        }
+        Text {
+          text: "github.com/Bekkenes/tintito ↗"
+          style: small
+          color: accent
+          onTap: url("https://github.com/Bekkenes/tintito")
+        }
+        Spacer { height: screenInset + 8 }
+      }
+    }
+  }
+}

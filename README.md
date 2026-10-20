@@ -127,6 +127,17 @@ Environment variables: `PORT` (3000), `HOST` (`0.0.0.0`), `ALLOW_PRIVATE`
 - Charset decoding happens in the browser; switch it in Settings if a legacy
   MUD's CP437 art looks garbled.
 
+## Omalauncher app
+
+`oma/` is an **additional** install path for [Omalauncher](https://github.com/SimonSchubert/omalauncher),
+the Android launcher that runs Arch Linux and OWL apps. It is a direct
+telnet/TLS terminal client with the same presets and mascot, shipped as an OWL
+app in the Omalauncher store; it does **not** replace the browser PWA above.
+
+See `oma/README.md`, and the store submission under
+`apps/bekkenes/tintito/` in
+[SimonSchubert/omarchy-widgets](https://github.com/SimonSchubert/omarchy-widgets).
+
 ## Store packaging
 
 TinTito is an installable PWA, not a native app checked into this repo, and

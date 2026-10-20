@@ -329,4 +329,5 @@ if __name__ == '__main__':
     for size, pad, scale in [(180, 10, 3), (192, 4, 4), (512, 12, 8), (1024, 12, 16)]:
         open(f'public/icons/icon-{size}.png', 'wb').write(
             png_bytes(scale=scale, bg=(16, 23, 35, 255), pad=pad))
+    open('assets/icon-oma-192.png', 'wb').write(png_bytes(scale=4, bg=None, pad=4))
     print('wrote logo + icons')

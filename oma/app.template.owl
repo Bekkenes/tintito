@@ -1,0 +1,112 @@
+app "tintito" {
+  meta {
+    owl: 8
+    description: "A direct MUD client for the launcher's terminal: presets for Aardwolf, Alter Aeon and Discworld, or your own host, with telnet NAWS, UTF-8 and TLS. No TinTito server or account."
+    version: "1.0"
+    license: "MIT"
+    category: "games"
+  }
+  requires { pacman: ["python"] }
+
+  asset logo = base64"__ICON__"
+  icon: logo
+
+  state host = "aardwolf.org" persist
+  state port = "4000" persist
+  state tls = false persist
+  state textSize = 11 persist
+  state running = false
+
+  let PRESETS = [
+    ["Aardwolf", "aardwolf.org", "4000", false],
+    ["Alter Aeon", "alteraeon.com", "3000", false],
+    ["Discworld", "discworld.starturtle.net", "4242", false]
+  ]
+
+  let command = """set -e
+d="$HOME/.cache/omalauncher/tintito"
+mkdir -p "$d"
+cat > "$d/tintito-tui.py" <<'TINTITO_OMA_PY'
+__CLIENT__
+TINTITO_OMA_PY
+exec python3 "$d/tintito-tui.py" ${sh(host)} ${sh(port)} ${tls ? 1 : 0}"""
+
+  title: running ? "TinTito - ${host}" : "TinTito"
+  back: running
+  onBack: running = false
+  edge: true
+
+  Box {
+    fill: true
+    align: topStart
+    if running {
+      Terminal { command: command; fontSize: textSize; padding: 0; fill: true }
+    } else {
+      Column {
+        fill: true
+        scroll: true
+        padding: [16, 0]
+        gap: 12
+        Row {
+          gap: 12
+          align: center
+          padding: [2, 0]
+          Image { src: logo; size: 84 }
+          Column {
+            gap: 2
+            Text { text: "TinTito"; style: title; bold: true }
+            Text { text: "a pocket MUD client"; style: small; color: muted }
+          }
+        }
+        Text {
+          text: "Direct telnet or TLS from the launcher terminal. Presets below, or use your own host. No TinTito server, account, or bridge."
+          style: small
+          color: muted
+          maxLines: 4
+        }
+        Text { text: "host and port"; style: label; color: muted }
+        Row {
+          gap: 8
+          Input { weight: 1; text: host; placeholder: "aardwolf.org"; onChange: host = value; fontSize: 15 }
+          Input { width: 84; text: port; placeholder: "4000"; onChange: port = value; fontSize: 15 }
+        }
+        Row {
+          gap: 10
+          align: center
+          Button { text: tls ? "TLS on" : "TLS off"; color: tls ? accent : muted; onTap: tls = !tls }
+          Text { text: "${textSize} pt"; style: small; color: muted; width: 42 }
+          Slider { weight: 1; value: textSize; min: 9; max: 18; step: 1; onChange: textSize = value }
+        }
+        Text { text: "presets"; style: label; color: muted }
+        Flow {
+          gap: 6
+          for p in PRESETS {
+            Button {
+              text: p[0]
+              onTap: { host = p[1]; port = p[2]; tls = p[3]; haptic() }
+            }
+          }
+        }
+        Button {
+          text: "Connect"
+          background: accent
+          color: background
+          onTap: { running = true; haptic() }
+        }
+        Text {
+          text: "Tap the terminal to type. Ctrl-] disconnects. Back returns here. TLS works with a valid certificate."
+          style: small
+          color: muted
+          maxLines: 3
+        }
+        Text {
+          text: "github.com/Bekkenes/tintito ↗"
+          style: small
+          color: accent
+          onTap: url("https://github.com/Bekkenes/tintito")
+        }
+        Spacer { height: screenInset + 8 }
+      }
+    }
+  }
+}
